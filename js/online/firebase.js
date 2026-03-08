@@ -127,8 +127,11 @@ const FB = (() => {
   }
 
   // Signaling WebRTC via Firebase
+  // IMPORTANT : on utilise push() et non set() pour que chaque signal
+  // (notamment les candidats ICE multiples) ait sa propre clé et ne
+  // s'écrase pas mutuellement.
   async function sendSignal(code, toUid, data) {
-    await db.ref(`rooms/${code}/voice/signals/${toUid}/${myUid}`).set({
+    await db.ref(`rooms/${code}/voice/signals/${toUid}`).push({
       ...data, from: myUid, ts: Date.now()
     });
   }

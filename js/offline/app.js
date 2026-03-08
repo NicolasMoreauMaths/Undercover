@@ -20,7 +20,8 @@ const OfflineApp = (() => {
   function removePlayer(i){AppState.playerNames.splice(i,1);OfflineUI.renderPlayerList();OfflineUI.updateStartBtn();}
   function startGame(){
     const hasMrWhite=document.getElementById('toggle-mrwhite').checked;
-    const undercoverCount=parseInt(document.getElementById('undercover-count').value)||1;
+    const parsedUC=parseInt(document.getElementById('undercover-count').value,10);
+    const undercoverCount=isNaN(parsedUC)?1:parsedUC;
     const r=OfflineGame.setupGame(AppState.playerNames,{hasMrWhite,undercoverCount});
     if(r.error){OfflineUI.showToast(r.error,'error');return;}
     showReveal();

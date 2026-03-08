@@ -14,6 +14,10 @@ const OnlineApp = (() => {
   let currentGameData = null;
   let resolvingVote = false; // verrou pour éviter la résolution multiple du vote
 
+  // Nom sauvegardé entre les parties (persisté dans localStorage)
+  let savedName = localStorage.getItem('undercover_name') || '';
+  function saveName(n) { savedName = n; try { localStorage.setItem('undercover_name', n); } catch(e) {} }
+
   // ---- HELPERS ----
   function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function show(id){document.getElementById(id)?.classList.remove('hidden');}
@@ -73,11 +77,14 @@ const OnlineApp = (() => {
   // ---- CREATE ----
   function showCreateRoom() {
     showScreen('screen-create-room');
+    // Pré-remplir le prénom si connu
+    const inp = document.getElementById('create-name-input');
+    if (savedName && !inp.value) inp.value = savedName;
     document.getElementById('btn-do-create').onclick = async () => {
       const name = document.getElementById('create-name-input').value.trim();
       if (!name) { showToast('Entre ton prénom !','warning'); return; }
       if (name.length > 20) { showToast('Prénom trop long.','warning'); return; }
-      myName = name;
+      myName = name; saveName(name);
       const code = genCode();
       roomCode = code;
       isHost = true;
@@ -93,13 +100,16 @@ const OnlineApp = (() => {
   // ---- JOIN ----
   function showJoinRoom() {
     showScreen('screen-join-room');
+    // Pré-remplir le prénom si connu
+    const inp = document.getElementById('join-name-input');
+    if (savedName && !inp.value) inp.value = savedName;
     document.getElementById('btn-do-join').onclick = async () => {
       const name = document.getElementById('join-name-input').value.trim();
       const code = document.getElementById('join-code-input').value.trim().toUpperCase();
       if (!name) { showToast('Entre ton prénom !','warning'); return; }
       if (name.length > 20) { showToast('Prénom trop long.','warning'); return; }
       if (code.length !== 4) { showToast('Le code fait 4 lettres.','warning'); return; }
-      myName = name; roomCode = code;
+      myName = name; saveName(name); roomCode = code;
       const r = await FB.joinRoom(code, { name, uid: myUid, online: true, ready: false });
       if (r.error) { showToast(r.error,'error'); return; }
       FB.setupPresence(code);
@@ -172,7 +182,9 @@ const OnlineApp = (() => {
     const players = Object.values(currentRoomData.players || {});
     if (players.length < 3) { showToast('Il faut au moins 3 joueurs !','warning'); return; }
     const hasMrWhite = document.getElementById('online-toggle-mrwhite').checked;
-    const undercoverCount = parseInt(document.getElementById('online-undercover-count').value) || 1;
+    const parsedUC = parseInt(document.getElementById('online-undercover-count').value, 10);
+    const undercoverCount = isNaN(parsedUC) ? 1 : parsedUC;
+    if (undercoverCount === 0 && !hasMrWhite) { showToast('Active au moins un rôle spécial !','warning'); return; }
     const wordPair = getRandomWordPair();
     const shuffled = shuffleArray([...players]);
     const n = shuffled.length;
@@ -234,16 +246,12 @@ const OnlineApp = (() => {
     const nameEl = document.getElementById('online-reveal-greeting');
     txt('online-reveal-greeting', `Salut ${me.name} ! 👋`);
     if (me.role === 'mrwhite') {
-      wordEl.textContent = '❓ Aucun mot !';
-      roleEl.textContent = 'Tu es Mr. White — bluff et essaie de deviner !';
+      wordEl.textContent = '❓';
+      roleEl.textContent = '🤫 Tu n\'as pas de mot — écoute bien et bluff !';
       roleEl.className = 'reveal-role-badge mrwhite';
-    } else if (me.role === 'undercover') {
-      wordEl.textContent = me.word;
-      roleEl.textContent = '🕵️ Tu es l\'Undercover — cache-toi !';
-      roleEl.className = 'reveal-role-badge undercover';
     } else {
       wordEl.textContent = me.word;
-      roleEl.textContent = '👤 Tu es Citoyen(ne) — trouve l\'imposteur !';
+      roleEl.textContent = '🎭 Mémorise bien ton mot, c\'est ton seul indice !';
       roleEl.className = 'reveal-role-badge citizen';
     }
     // Bouton prêt

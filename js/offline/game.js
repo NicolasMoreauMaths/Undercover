@@ -13,9 +13,11 @@ const OfflineGame = (() => {
     const n = names.length;
     if(n<3) return {error:'Il faut au moins 3 joueurs.'};
     if(n>12) return {error:'Maximum 12 joueurs.'};
-    state.settings.hasMrWhite = options.hasMrWhite||false;
-    state.settings.undercoverCount = Math.min(options.undercoverCount||1, Math.floor((n-1)/2));
-    const specialCount = state.settings.undercoverCount + (state.settings.hasMrWhite?1:0);
+    state.settings.hasMrWhite = options.hasMrWhite || false;
+    const rawUC = typeof options.undercoverCount === 'number' ? options.undercoverCount : 1;
+    state.settings.undercoverCount = Math.min(rawUC, Math.floor((n-1)/2));
+    const specialCount = state.settings.undercoverCount + (state.settings.hasMrWhite ? 1 : 0);
+    if(specialCount === 0) return {error:'Active au moins un rôle spécial (Undercover ou Mr. White) !'};
     if(specialCount >= n-1) return {error:'Trop de rôles spéciaux pour ce nombre de joueurs.'};
 
     state.wordPair = getRandomWordPair();
