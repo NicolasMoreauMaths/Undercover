@@ -38,9 +38,8 @@ const OfflineUI = (() => {
     document.getElementById('reveal-btn-show').onclick=()=>{
       const w=document.getElementById('reveal-word');
       const r=document.getElementById('reveal-role');
-      if(player.role==='mrwhite'){w.textContent='❓ Aucun mot !';r.textContent='Tu es Mr. White — bluff et devine !';r.className='reveal-role-badge mrwhite';}
-      else if(player.role==='undercover'){w.textContent=player.word;r.textContent='🕵️ Tu es l\'Undercover — cache-toi !';r.className='reveal-role-badge undercover';}
-      else{w.textContent=player.word;r.textContent='👤 Tu es Citoyen(ne) — trouve l\'imposteur !';r.className='reveal-role-badge citizen';}
+      if(player.role==='mrwhite'){w.textContent='❓';r.textContent='🤫 Tu n\'as pas de mot — écoute bien et bluff !';r.className='reveal-role-badge mrwhite';}
+      else{w.textContent=player.word;r.textContent='🎭 Mémorise bien ton mot, c\'est ton seul indice !';r.className='reveal-role-badge citizen';}
       show('reveal-word-container');hide('reveal-btn-show');show('reveal-btn-next');
       document.getElementById('reveal-word-container').classList.add('animate-pop');
     };

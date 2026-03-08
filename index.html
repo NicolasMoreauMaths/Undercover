@@ -61,7 +61,7 @@
         <div class="card-title">⚙️ Options</div>
         <div class="options-row">
           <div><div class="options-label">Nombre d'Undercover</div><div class="options-desc">Pour les grands groupes, mets 2</div></div>
-          <select id="undercover-count" class="select-field"><option value="1">1</option><option value="2">2</option></select>
+          <select id="undercover-count" class="select-field"><option value="0">0</option><option value="1" selected>1</option><option value="2">2</option></select>
         </div>
         <div class="options-row">
           <div><div class="options-label">Mr. White ❓</div><div class="options-desc">Un joueur sans mot — doit bluffer !</div></div>
@@ -232,7 +232,7 @@
         <div class="card-title" style="color:var(--online)">⚙️ Options</div>
         <div class="options-row">
           <div><div class="options-label">Nombre d'Undercover</div></div>
-          <select id="online-undercover-count" class="select-field"><option value="1">1</option><option value="2">2</option></select>
+          <select id="online-undercover-count" class="select-field"><option value="0">0</option><option value="1" selected>1</option><option value="2">2</option></select>
         </div>
         <div class="options-row">
           <div><div class="options-label">Mr. White ❓</div></div>
@@ -379,9 +379,19 @@
 <!-- PWA Service Worker Registration -->
 <script>
   if ('serviceWorker' in navigator) {
+    // Rechargement auto quand un nouveau SW prend le contrôle (mise à jour)
+    const wasControlled = !!navigator.serviceWorker.controller;
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (wasControlled && !refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
-        .catch(err => console.warn('SW registration failed:', err));
+        .catch(err => console.warn('[SW] Enregistrement échoué :', err));
     });
   }
 </script>
