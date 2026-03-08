@@ -115,6 +115,17 @@ const FB = (() => {
     voiceRef(code).off();
   }
 
+  // ReadyPlayers helpers (évite l'accès direct à FB.db depuis l'extérieur)
+  async function setReadyPlayer(code, uid) {
+    await db.ref(`rooms/${code}/game/readyPlayers/${uid}`).set(true);
+  }
+  function onReadyPlayers(code, cb) {
+    return db.ref(`rooms/${code}/game/readyPlayers`).on('value', s => cb(s.val() || {}));
+  }
+  function offReadyPlayers(code) {
+    db.ref(`rooms/${code}/game/readyPlayers`).off();
+  }
+
   // Signaling WebRTC via Firebase
   async function sendSignal(code, toUid, data) {
     await db.ref(`rooms/${code}/voice/signals/${toUid}/${myUid}`).set({
@@ -139,6 +150,7 @@ const FB = (() => {
     createRoom, joinRoom, leaveRoom, setupPresence,
     setGameState, updateGameState, setRoomStatus, submitClue, submitVote,
     sendChatMessage, onRoom, onGame, onChat, onVoice, off,
+    setReadyPlayer, onReadyPlayers, offReadyPlayers,
     sendSignal, onSignal, updateMicStatus,
     roomRef, playersRef, gameRef,
   };

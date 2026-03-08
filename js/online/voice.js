@@ -9,7 +9,8 @@ const Voice = (() => {
   let myUid = null;
   let onSpeakingCb = null;
   let audioCtx = null;
-  let analyserNodes = {};
+  let analyserNodes = {}; // uid -> { analyser, src, intervalId }
+  let signalRef = null;   // Firebase ref for incoming signals (for cleanup)
 
   const RTC_CONFIG = {
     iceServers: [
@@ -27,8 +28,8 @@ const Voice = (() => {
       for (const oid of otherUids) {
         if (oid !== uid) await createPeer(oid, true);
       }
-      // Écouter les signaux entrants
-      FB.onSignal(code, async (data) => {
+      // Écouter les signaux entrants (stocker la ref pour pouvoir la désactiver)
+      signalRef = FB.onSignal(code, async (data) => {
         if (data.type === 'offer')       await handleOffer(data);
         else if (data.type === 'answer') await handleAnswer(data);
         else if (data.type === 'ice')    await handleIce(data);
@@ -57,7 +58,9 @@ const Voice = (() => {
     };
     pc.onconnectionstatechange = () => {
       if (['failed','disconnected','closed'].includes(pc.connectionState)) {
-        pc.close(); delete peers[targetUid];
+        cleanupAnalyser(targetUid);
+        pc.close();
+        delete peers[targetUid];
       }
     };
     if (isInitiator) {
@@ -99,6 +102,15 @@ const Voice = (() => {
 
   function isMuted() { return muted; }
 
+  // Nettoyer un analyser spécifique (par uid)
+  function cleanupAnalyser(uid) {
+    const node = analyserNodes[uid];
+    if (!node) return;
+    if (node.intervalId) clearInterval(node.intervalId);
+    try { node.src.disconnect(); } catch(e) {}
+    delete analyserNodes[uid];
+  }
+
   function startSpeakingDetection() {
     if (!localStream) return;
     try {
@@ -108,15 +120,19 @@ const Voice = (() => {
       analyser.fftSize = 512;
       src.connect(analyser);
       const buf = new Uint8Array(analyser.frequencyBinCount);
-      setInterval(() => {
+      const intervalId = setInterval(() => {
         analyser.getByteFrequencyData(buf);
         const avg = buf.reduce((a,b)=>a+b,0)/buf.length;
         if (onSpeakingCb) onSpeakingCb(myUid, avg > 20);
       }, 150);
+      // Stocker pour cleanup ultérieur
+      analyserNodes[myUid] = { analyser, src, intervalId };
     } catch(e) {}
   }
 
   function watchRemoteSpeaking(uid, stream) {
+    // Éviter les doublons si déjà en cours
+    if (analyserNodes[uid]) cleanupAnalyser(uid);
     try {
       if (!audioCtx) audioCtx = new AudioContext();
       const src = audioCtx.createMediaStreamSource(stream);
@@ -124,11 +140,12 @@ const Voice = (() => {
       analyser.fftSize = 512;
       src.connect(analyser);
       const buf = new Uint8Array(analyser.frequencyBinCount);
-      setInterval(() => {
+      const intervalId = setInterval(() => {
         analyser.getByteFrequencyData(buf);
         const avg = buf.reduce((a,b)=>a+b,0)/buf.length;
         if (onSpeakingCb) onSpeakingCb(uid, avg > 15);
       }, 150);
+      analyserNodes[uid] = { analyser, src, intervalId };
     } catch(e) {}
   }
 
@@ -140,10 +157,34 @@ const Voice = (() => {
   }
 
   function stop() {
+    // Arrêter tous les intervals de détection de parole
+    Object.keys(analyserNodes).forEach(uid => cleanupAnalyser(uid));
+    analyserNodes = {};
+
+    // Fermer toutes les connexions WebRTC
     Object.values(peers).forEach(pc => pc.close());
     peers = {};
-    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-    if (audioCtx) { audioCtx.close(); audioCtx = null; }
+
+    // Arrêter le flux micro local
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
+    }
+
+    // Fermer le contexte audio
+    if (audioCtx) {
+      audioCtx.close().catch(() => {});
+      audioCtx = null;
+    }
+
+    // Désabonner l'écouteur de signaux Firebase
+    if (signalRef) {
+      signalRef.off();
+      signalRef = null;
+    }
+
+    muted = false;
+    onSpeakingCb = null;
   }
 
   return { start, toggleMute, isMuted, onSpeaking, addPeer, stop };

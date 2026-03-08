@@ -1,0 +1,44 @@
+{
+  "name": "Undercover",
+  "short_name": "Undercover",
+  "description": "Jeu de déduction et de bluff — Trouve l'imposteur !",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0e0f1a",
+  "background_color": "#0e0f1a",
+  "lang": "fr",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Mode Hors-ligne",
+      "short_name": "Hors-ligne",
+      "description": "Jouer sans connexion",
+      "url": ".?mode=offline",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Mode En Ligne",
+      "short_name": "En Ligne",
+      "description": "Jouer en réseau",
+      "url": ".?mode=online",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

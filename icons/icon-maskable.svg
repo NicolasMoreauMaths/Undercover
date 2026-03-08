@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bgGlow" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#252850" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0e0f1a" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="hatGrad" x1="0%" y1="0%" x2="60%" y2="100%">
+      <stop offset="0%" stop-color="#f5d060"/>
+      <stop offset="100%" stop-color="#c4880a"/>
+    </linearGradient>
+    <linearGradient id="brimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f5d060"/>
+      <stop offset="100%" stop-color="#d4980e"/>
+    </linearGradient>
+    <radialGradient id="lensGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff5577" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#ff5577" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="hatShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#f0c040" flood-opacity="0.3"/>
+    </filter>
+    <filter id="lensShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="7" flood-color="#ff5577" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Full bleed background (no rounded corners for maskable) -->
+  <rect width="512" height="512" fill="url(#bgGlow)"/>
+  <circle cx="110" cy="100" r="180" fill="#4f54b4" opacity="0.08"/>
+
+  <!-- Scaled content with safe-zone padding (content fits in center 80%) -->
+  <g transform="translate(50,40) scale(0.82)">
+    <!-- Hat crown shadow -->
+    <path d="M202,262 C200,192 206,146 256,132 C306,146 312,192 310,262Z"
+          fill="#a07008" opacity="0.7"/>
+    <!-- Hat crown -->
+    <path d="M206,262 C204,196 210,150 256,137 C302,150 308,196 306,262Z"
+          fill="url(#hatGrad)" filter="url(#hatShadow)"/>
+    <!-- Crown highlight -->
+    <path d="M216,262 C214,200 218,158 240,143 C230,160 226,208 228,262Z"
+          fill="#f5d880" opacity="0.25"/>
+    <!-- Hat dent -->
+    <path d="M228,146 Q256,130 284,146"
+          fill="none" stroke="#a07010" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
+    <!-- Hat band -->
+    <rect x="207" y="234" width="98" height="28" rx="5" fill="#ff5577"/>
+    <rect x="210" y="236" width="92" height="10" rx="4" fill="#fff" opacity="0.1"/>
+    <!-- Hat brim -->
+    <ellipse cx="256" cy="263" rx="152" ry="25" fill="url(#brimGrad)" filter="url(#hatShadow)"/>
+    <ellipse cx="240" cy="257" rx="115" ry="12" fill="#f5d880" opacity="0.28"/>
+    <ellipse cx="256" cy="275" rx="150" ry="14" fill="#b87010" opacity="0.45"/>
+    <!-- Handle -->
+    <line x1="318" y1="432" x2="374" y2="486"
+          stroke="#ff5577" stroke-width="30" stroke-linecap="round"
+          filter="url(#lensShadow)"/>
+    <!-- Glass ring -->
+    <circle cx="262" cy="378" r="84"
+            fill="none" stroke="#ff5577" stroke-width="24"
+            filter="url(#lensShadow)"/>
+    <circle cx="262" cy="378" r="84"
+            fill="none" stroke="#ff7799" stroke-width="8" opacity="0.4"/>
+    <!-- Lens -->
+    <circle cx="262" cy="378" r="60" fill="#0e0f1a"/>
+    <circle cx="262" cy="378" r="60" fill="url(#lensGlow)"/>
+    <ellipse cx="244" cy="359" rx="18" ry="13"
+             fill="#fff" opacity="0.07" transform="rotate(-20 244 359)"/>
+    <line x1="245" y1="378" x2="279" y2="378" stroke="#ff5577" stroke-width="2" opacity="0.4"/>
+    <line x1="262" y1="361" x2="262" y2="395" stroke="#ff5577" stroke-width="2" opacity="0.4"/>
+    <circle cx="262" cy="378" r="8" fill="none" stroke="#ff5577" stroke-width="2" opacity="0.35"/>
+  </g>
+</svg>

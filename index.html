@@ -5,8 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <meta name="description" content="Undercover — jeu de déduction et de bluff"/>
   <meta name="theme-color" content="#0e0f1a"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Undercover"/>
   <title>Undercover 🕵️</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>"/>
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json"/>
+  <!-- Icons -->
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg"/>
+  <link rel="apple-touch-icon" href="icons/icon.svg"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&display=swap">
@@ -289,10 +297,10 @@
       <div class="card">
         <div class="card-title" style="color:var(--online);font-size:1rem">💬 Tchat</div>
         <div class="chat-container" style="height:200px">
-          <div id="chat-messages" class="chat-messages"></div>
+          <div id="play-chat-messages" class="chat-messages"></div>
           <div class="chat-input-bar">
-            <input id="chat-input" class="chat-input" type="text" placeholder="Discute..." maxlength="200" autocomplete="off"/>
-            <button id="chat-send" class="chat-send-btn">➤</button>
+            <input id="play-chat-input" class="chat-input" type="text" placeholder="Discute..." maxlength="200" autocomplete="off"/>
+            <button id="play-chat-send" class="chat-send-btn">➤</button>
           </div>
         </div>
       </div>
@@ -367,5 +375,15 @@
 <script src="js/offline/app.js"></script>
 <script src="js/online/app.js"></script>
 <script src="js/main.js"></script>
+
+<!-- PWA Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .catch(err => console.warn('SW registration failed:', err));
+    });
+  }
+</script>
 </body>
 </html>

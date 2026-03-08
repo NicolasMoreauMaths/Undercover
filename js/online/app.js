@@ -12,6 +12,7 @@ const OnlineApp = (() => {
   let voiceActive = false;
   let currentRoomData = null;
   let currentGameData = null;
+  let resolvingVote = false; // verrou pour éviter la résolution multiple du vote
 
   // ---- HELPERS ----
   function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -204,6 +205,7 @@ const OnlineApp = (() => {
       winners: null,
       startedAt: Date.now(),
     };
+    resolvingVote = false;
     await FB.setGameState(roomCode, gameState);
     await FB.setRoomStatus(roomCode, 'playing');
   }
@@ -248,18 +250,17 @@ const OnlineApp = (() => {
     const btn = document.getElementById('btn-online-reveal-ready');
     btn.onclick = async () => {
       btn.disabled = true; btn.textContent = '✅ Prêt(e) !';
-      await FB.db.ref(`rooms/${roomCode}/game/readyPlayers/${myUid}`).set(true);
+      await FB.setReadyPlayer(roomCode, myUid);
       // Si hôte, surveiller quand tout le monde est prêt
       if (isHost) watchAllReady(g);
     };
   }
 
   function watchAllReady(g) {
-    FB.db.ref(`rooms/${roomCode}/game/readyPlayers`).on('value', async snap => {
-      const ready = snap.val() || {};
+    FB.onReadyPlayers(roomCode, async (ready) => {
       const alivePlayers = Object.values(g.playerMap).filter(p => p.alive);
       if (Object.keys(ready).length >= alivePlayers.length) {
-        FB.db.ref(`rooms/${roomCode}/game/readyPlayers`).off();
+        FB.offReadyPlayers(roomCode);
         await FB.updateGameState(roomCode, { phase: 'play', clues: {} });
       }
     });
@@ -268,6 +269,7 @@ const OnlineApp = (() => {
   // PLAY : indices écrits
   function renderOnlinePlay(g) {
     showScreen('screen-online-play');
+    setupPlayChat();
     const me = g.playerMap[myUid];
     const alive = Object.values(g.playerMap).filter(p => p.alive);
     txt('online-round', `Manche ${g.round}`);
@@ -373,7 +375,7 @@ const OnlineApp = (() => {
       c.insertAdjacentHTML('beforeend','<p style="color:var(--text2);font-size:.85rem;margin-top:8px">Tu es éliminé(e) — tu ne peux plus voter.</p>');
     }
     // Hôte résout le vote quand tout le monde a voté
-    if (isHost && totalVotes >= alive.length) {
+    if (isHost && totalVotes >= alive.length && !resolvingVote) {
       setTimeout(() => resolveOnlineVote(g), 500);
     }
   }
@@ -386,6 +388,9 @@ const OnlineApp = (() => {
   }
 
   async function resolveOnlineVote(g) {
+    if (resolvingVote) return;
+    if (currentGameData?.phase !== 'vote') return; // déjà résolu
+    resolvingVote = true;
     const alive = Object.values(g.playerMap).filter(p => p.alive);
     const votes = g.votes || {};
     const counts = {};
@@ -417,6 +422,7 @@ const OnlineApp = (() => {
       }
     }
     await FB.updateGameState(roomCode, updates);
+    resolvingVote = false;
   }
 
   function renderOnlineResult(g) {
@@ -434,6 +440,7 @@ const OnlineApp = (() => {
     if (isHost) {
       show('btn-next-round-online');
       document.getElementById('btn-next-round-online').onclick = async () => {
+        resolvingVote = false;
         await FB.updateGameState(roomCode, { phase: 'play', round: (g.round||1)+1, clues:{}, votes:{}, eliminatedThisRound:null, tieResult:false });
       };
     } else {
@@ -518,12 +525,20 @@ const OnlineApp = (() => {
     const sendBtn = document.getElementById('chat-send');
     const inp = document.getElementById('chat-input');
     if (!sendBtn || !inp) return;
-    sendBtn.onclick = sendChat;
-    inp.onkeydown = e => { if(e.key==='Enter') sendChat(); };
+    sendBtn.onclick = () => sendChatFrom('chat-input');
+    inp.onkeydown = e => { if(e.key==='Enter') sendChatFrom('chat-input'); };
   }
 
-  async function sendChat() {
-    const inp = document.getElementById('chat-input');
+  function setupPlayChat() {
+    const sendBtn = document.getElementById('play-chat-send');
+    const inp = document.getElementById('play-chat-input');
+    if (!sendBtn || !inp) return;
+    sendBtn.onclick = () => sendChatFrom('play-chat-input');
+    inp.onkeydown = e => { if(e.key==='Enter') sendChatFrom('play-chat-input'); };
+  }
+
+  async function sendChatFrom(inputId) {
+    const inp = document.getElementById(inputId);
     if (!inp) return;
     const text = inp.value.trim();
     if (!text) return;
@@ -532,15 +547,18 @@ const OnlineApp = (() => {
   }
 
   function appendChatMsg(msg) {
-    const box = document.getElementById('chat-messages');
-    if (!box) return;
-    const div = document.createElement('div');
-    div.className = 'chat-msg';
+    // Écrire dans tous les conteneurs de chat (lobby + jeu)
+    const boxes = document.querySelectorAll('.chat-messages');
+    if (!boxes.length) return;
     const isMe = msg.uid === myUid;
     const isSystem = msg.uid === 'system';
-    div.innerHTML = `<span class="chat-msg-name ${isMe?'own':isSystem?'system':''}">${esc(msg.name)}</span><span class="chat-msg-text">${esc(msg.text)}</span>`;
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
+    boxes.forEach(box => {
+      const div = document.createElement('div');
+      div.className = 'chat-msg';
+      div.innerHTML = `<span class="chat-msg-name ${isMe?'own':isSystem?'system':''}">${esc(msg.name)}</span><span class="chat-msg-text">${esc(msg.text)}</span>`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    });
   }
 
   // ---- VOICE ----
