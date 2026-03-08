@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="description" content="Undercover — jeu de déduction et de bluff"/>
+  <meta name="theme-color" content="#0e0f1a"/>
+  <title>Undercover 🕵️</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="app-logo">UNDER<span>COVER</span></div>
+    <div class="app-tagline">🕵️ Bluff, déduction &amp; trahison</div>
+  </header>
+
+  <!-- MODE SELECTOR -->
+  <div class="mode-selector">
+    <button class="mode-card" id="btn-mode-offline" aria-label="Mode hors-ligne">
+      <span class="mode-icon">📴</span>
+      <div class="mode-title" style="color:var(--accent)">Hors-ligne</div>
+      <div class="mode-desc">Un seul téléphone<br>Indices à voix haute</div>
+    </button>
+    <button class="mode-card" id="btn-mode-online" aria-label="Mode en ligne">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-title" style="color:var(--online)">En ligne</div>
+      <div class="mode-desc">Chacun son téléphone<br>Tchat + vocal</div>
+    </button>
+  </div>
+
+  <!-- ========== SECTION OFFLINE ========== -->
+  <div id="section-offline" class="hidden">
+
+    <!-- SETUP -->
+    <main id="screen-setup" class="screen hidden">
+      <div class="card">
+        <div class="card-title">👥 Les Joueurs</div>
+        <div id="player-list"></div>
+        <div class="input-group">
+          <input id="input-player-name" class="input-field" type="text" placeholder="Prénom du joueur..." maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false"/>
+          <button id="btn-add-player" class="btn btn-secondary" style="width:auto;padding:12px 16px" aria-label="Ajouter">➕</button>
+        </div>
+        <p style="font-size:.76rem;color:var(--text2)">3 à 12 joueurs • Prénoms mélangés automatiquement</p>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ Options</div>
+        <div class="options-row">
+          <div><div class="options-label">Nombre d'Undercover</div><div class="options-desc">Pour les grands groupes, mets 2</div></div>
+          <select id="undercover-count" class="select-field"><option value="1">1</option><option value="2">2</option></select>
+        </div>
+        <div class="options-row">
+          <div><div class="options-label">Mr. White ❓</div><div class="options-desc">Un joueur sans mot — doit bluffer !</div></div>
+          <label class="toggle-wrapper"><input type="checkbox" id="toggle-mrwhite"/><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📖 Comment jouer ?</div>
+        <div class="rules-section"><div class="rules-title">🎯 Mode Hors-ligne</div>
+          <ul class="rules-list">
+            <li>Chaque joueur voit son mot secrètement (on se passe le téléphone).</li>
+            <li>Tour à tour, chaque joueur dit son indice <strong>à voix haute</strong> (1 à 3 mots).</li>
+            <li>Tout le monde vote sur le téléphone pour éliminer l'imposteur.</li>
+          </ul>
+        </div>
+      </div>
+      <button id="btn-start" class="btn btn-primary" disabled>Ajouter encore 3 joueur(s)</button>
+    </main>
+
+    <!-- REVEAL (offline) -->
+    <main id="screen-reveal" class="screen hidden">
+      <div class="card">
+        <div class="reveal-center">
+          <div class="reveal-avatar">🙈</div>
+          <div id="reveal-player-name" class="reveal-name">Joueur</div>
+          <p id="reveal-instruction" class="reveal-instruction">Passe le téléphone et clique quand tu es prêt(e).</p>
+          <div id="reveal-word-container" class="hidden" style="width:100%">
+            <span id="reveal-word">---</span>
+            <div id="reveal-role" class="reveal-role-badge citizen">Rôle</div>
+          </div>
+          <button id="reveal-btn-show" class="btn btn-primary" style="margin-top:8px">👁️ Voir mon mot</button>
+          <button id="reveal-btn-next" class="btn btn-secondary hidden" style="margin-top:10px">Joueur suivant ➜</button>
+        </div>
+      </div>
+      <p style="font-size:.76rem;color:var(--text2);text-align:center;padding:0 4px">⚠️ Ne montre ton mot à personne !</p>
+    </main>
+
+    <!-- VOTE (offline) -->
+    <main id="screen-vote" class="screen hidden">
+      <div class="card">
+        <div class="vote-header">
+          <div id="vote-title" class="vote-title">Vote</div>
+          <div id="vote-player-name" style="font-family:var(--font-title);font-size:1.4rem;color:var(--text)">Joueur, vote !</div>
+          <p id="vote-subtitle" class="vote-subtitle">Qui est l'imposteur ?</p>
+        </div>
+        <div id="vote-targets"></div>
+        <p id="vote-progress" class="vote-progress">0 / 0 votes</p>
+      </div>
+    </main>
+
+    <!-- RESULT (offline) -->
+    <main id="screen-vote-result" class="screen hidden">
+      <div class="card" style="text-align:center">
+        <div id="result-title" class="result-title">Résultat</div>
+        <p id="result-body" class="result-body">...</p>
+        <div id="result-eliminated"></div>
+        <button id="btn-continue-result" class="btn btn-primary">Continuer ➜</button>
+      </div>
+    </main>
+
+    <!-- MR WHITE GUESS (offline) -->
+    <main id="screen-mrwhite-guess" class="screen hidden">
+      <div class="card mrwhite-guess-screen">
+        <div class="mrwhite-title">❓ Dernière chance !</div>
+        <p id="mrwhite-name" style="color:var(--mrwhite);font-weight:800;font-size:1.05rem;margin-bottom:8px"></p>
+        <p class="mrwhite-desc">Tu es Mr. White et tu viens d'être éliminé(e).<br/>Si tu devines le mot des citoyens, <strong>tu gagnes !</strong><br/>Une seule tentative.</p>
+        <div class="input-group">
+          <input id="mrwhite-guess-input" class="input-field" type="text" placeholder="Le mot des citoyens ?" maxlength="30" autocomplete="off"/>
+        </div>
+        <button id="btn-mrwhite-guess" class="btn btn-danger">Valider ma réponse</button>
+      </div>
+    </main>
+
+    <!-- GAME OVER (offline) -->
+    <main id="screen-gameover" class="screen hidden">
+      <div class="card">
+        <div class="gameover-center">
+          <span id="gameover-emoji" class="gameover-emoji">🎉</span>
+          <div id="gameover-title" class="gameover-title">Titre</div>
+          <p id="gameover-sub" class="gameover-sub">Sous-titre</p>
+        </div>
+        <div id="gameover-words"></div>
+        <div class="section-title">🃏 Rôles de cette partie</div>
+        <div id="gameover-roles"></div>
+        <hr class="divider"/>
+        <button onclick="OfflineApp.replayGame()" class="btn btn-primary" style="margin-bottom:10px">🔄 Rejouer</button>
+        <button onclick="OfflineApp.restartGame()" class="btn btn-secondary">🏠 Menu</button>
+      </div>
+    </main>
+
+  </div><!-- /section-offline -->
+
+  <!-- ========== SECTION ONLINE ========== -->
+  <div id="section-online" class="hidden">
+
+    <!-- CONFIG FIREBASE -->
+    <main id="screen-online-config" class="screen hidden">
+      <div class="card">
+        <div class="card-title" style="color:var(--online)">🔧 Configuration Firebase</div>
+        <div class="config-warning">
+          <strong>Pour jouer en ligne, tu dois créer un projet Firebase gratuit.</strong><br/>
+          Suis ces étapes :
+          <ol class="config-steps">
+            <li>Va sur <strong>console.firebase.google.com</strong> et crée un projet</li>
+            <li>Dans <em>Build → Realtime Database</em>, crée une base de données (mode test)</li>
+            <li>Dans <em>Authentication → Sign-in method</em>, active <strong>Anonymous</strong></li>
+            <li>Dans <em>Project Settings → Your apps</em>, clique ➕ Web, copie la config</li>
+            <li>Colle les valeurs ci-dessous et clique Sauvegarder</li>
+          </ol>
+        </div>
+        <div class="input-group"><input id="cfg-apiKey" class="input-field online" placeholder="apiKey" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
+        <div class="input-group"><input id="cfg-authDomain" class="input-field online" placeholder="authDomain (xxx.firebaseapp.com)" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
+        <div class="input-group"><input id="cfg-databaseURL" class="input-field online" placeholder="databaseURL (https://xxx.firebasedatabase.app)" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
+        <div class="input-group"><input id="cfg-projectId" class="input-field online" placeholder="projectId" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
+        <div class="input-group"><input id="cfg-appId" class="input-field online" placeholder="appId" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
+        <button id="btn-save-config" class="btn btn-online">💾 Sauvegarder et recharger</button>
+        <p class="config-saved" style="display:none" id="config-saved-msg">✅ Sauvegardé !</p>
+      </div>
+    </main>
+
+    <!-- HOME ONLINE -->
+    <main id="screen-online-home" class="screen hidden">
+      <div class="card">
+        <div class="card-title" style="color:var(--online)">🌐 Mode En Ligne</div>
+        <p class="info-text">Chaque joueur utilise son propre téléphone. Vous pouvez être dans la même pièce ou à distance !</p>
+        <button id="btn-create-room" class="btn btn-online" style="margin-bottom:10px">➕ Créer une salle</button>
+        <button id="btn-join-room" class="btn btn-secondary">🚪 Rejoindre une salle</button>
+      </div>
+    </main>
+
+    <!-- CREATE ROOM -->
+    <main id="screen-create-room" class="screen hidden">
+      <div class="card">
+        <div class="card-title" style="color:var(--online)">➕ Créer une salle</div>
+        <p class="info-text">Un code à 4 lettres sera généré. Partage-le avec tes amis !</p>
+        <div class="input-group">
+          <input id="create-name-input" class="input-field online" type="text" placeholder="Ton prénom..." maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false"/>
+        </div>
+        <button id="btn-do-create" class="btn btn-online">🚀 Créer la salle</button>
+      </div>
+    </main>
+
+    <!-- JOIN ROOM -->
+    <main id="screen-join-room" class="screen hidden">
+      <div class="card">
+        <div class="card-title" style="color:var(--online)">🚪 Rejoindre une salle</div>
+        <div class="input-group">
+          <input id="join-name-input" class="input-field online" type="text" placeholder="Ton prénom..." maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false"/>
+        </div>
+        <div class="input-group">
+          <input id="join-code-input" class="input-field online" type="text" placeholder="Code à 4 lettres..." maxlength="4" style="text-transform:uppercase;letter-spacing:.15em;font-size:1.2rem" autocomplete="off" autocorrect="off" spellcheck="false"/>
+        </div>
+        <button id="btn-do-join" class="btn btn-online">🚪 Rejoindre</button>
+      </div>
+    </main>
+
+    <!-- LOBBY -->
+    <main id="screen-lobby" class="screen hidden">
+      <div class="card">
+        <div class="card-title" style="color:var(--online)">🏠 Salle d'attente</div>
+        <div id="lobby-code" class="room-code-display">----</div>
+        <p class="room-code-hint">Partage ce code avec tes amis</p>
+        <button id="lobby-copy-btn" class="btn btn-secondary btn-sm" style="margin-bottom:12px">📋 Copier le code</button>
+        <div id="lobby-players-list" class="lobby-players"></div>
+        <p id="lobby-count" class="lobby-status">0 joueur(s)</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--online)">⚙️ Options</div>
+        <div class="options-row">
+          <div><div class="options-label">Nombre d'Undercover</div></div>
+          <select id="online-undercover-count" class="select-field"><option value="1">1</option><option value="2">2</option></select>
+        </div>
+        <div class="options-row">
+          <div><div class="options-label">Mr. White ❓</div></div>
+          <label class="toggle-wrapper"><input type="checkbox" id="online-toggle-mrwhite"/><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <!-- Chat dans le lobby -->
+      <div class="card">
+        <div class="card-title" style="color:var(--online)">💬 Tchat</div>
+        <div class="chat-container">
+          <div id="chat-messages" class="chat-messages"></div>
+          <div class="chat-input-bar">
+            <input id="chat-input" class="chat-input" type="text" placeholder="Un message..." maxlength="200" autocomplete="off"/>
+            <button id="chat-send" class="chat-send-btn">➤</button>
+          </div>
+        </div>
+      </div>
+      <!-- Vocal -->
+      <div class="card">
+        <div class="card-title" style="color:var(--online)">🎙️ Vocal</div>
+        <div class="voice-bar">
+          <span class="voice-label">Parler avec les autres joueurs</span>
+          <button id="btn-voice-toggle" class="voice-btn" onclick="OnlineApp.toggleVoice()" title="Activer/désactiver le vocal">🎙️</button>
+          <button id="btn-voice-mute" class="voice-btn" onclick="OnlineApp.toggleMute()" title="Couper/rétablir le micro">🔊</button>
+        </div>
+        <div id="voice-peers" class="voice-peers"></div>
+      </div>
+      <button id="btn-start-online" class="btn btn-online hidden" style="margin-bottom:10px">🚀 Lancer la partie !</button>
+      <button id="btn-leave-room" class="btn btn-secondary">← Quitter la salle</button>
+    </main>
+
+    <!-- ONLINE REVEAL -->
+    <main id="screen-online-reveal" class="screen hidden">
+      <div class="card">
+        <div class="reveal-center">
+          <div class="reveal-avatar">🙈</div>
+          <div id="online-reveal-greeting" class="reveal-name" style="font-size:1.5rem">Salut !</div>
+          <p class="reveal-instruction">C'est ton mot secret — ne le montre à personne !</p>
+          <div style="background:var(--bg3);border:2px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:22px 28px;text-align:center;margin-bottom:18px;width:100%">
+            <span id="online-reveal-word" style="font-family:var(--font-title);font-size:2.4rem;letter-spacing:.1em;color:var(--text);display:block;margin-bottom:10px">---</span>
+            <div id="online-reveal-role" class="reveal-role-badge citizen">Rôle</div>
+          </div>
+          <button id="btn-online-reveal-ready" class="btn btn-online">✅ J'ai vu mon mot !</button>
+        </div>
+      </div>
+      <p style="font-size:.76rem;color:var(--text2);text-align:center;padding:0 4px">En attente que tout le monde soit prêt…</p>
+    </main>
+
+    <!-- ONLINE PLAY -->
+    <main id="screen-online-play" class="screen hidden">
+      <div class="card">
+        <div class="online-play-header">
+          <span id="online-round" class="round-badge">Manche 1</span>
+          <span id="online-clue-progress" style="font-size:.78rem;color:var(--text2)">0/0 indices</span>
+        </div>
+        <div id="online-players-bar" class="players-alive-bar"></div>
+        <div id="online-clues-list" class="clue-list"></div>
+        <div id="online-clue-area"></div>
+        <button id="btn-force-vote" class="btn btn-secondary btn-sm" style="display:none;margin-top:8px">⏭️ Passer au vote (hôte)</button>
+      </div>
+      <!-- Chat pendant le jeu -->
+      <div class="card">
+        <div class="card-title" style="color:var(--online);font-size:1rem">💬 Tchat</div>
+        <div class="chat-container" style="height:200px">
+          <div id="chat-messages" class="chat-messages"></div>
+          <div class="chat-input-bar">
+            <input id="chat-input" class="chat-input" type="text" placeholder="Discute..." maxlength="200" autocomplete="off"/>
+            <button id="chat-send" class="chat-send-btn">➤</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ONLINE VOTE -->
+    <main id="screen-online-vote" class="screen hidden">
+      <div class="card">
+        <div id="online-vote-round" class="vote-title" style="text-align:center;margin-bottom:8px">Vote</div>
+        <p style="text-align:center;color:var(--text2);font-size:.88rem;margin-bottom:4px">Qui est l'imposteur ?</p>
+        <p id="online-vote-progress" class="vote-progress" style="margin-bottom:12px">0/0 votes</p>
+        <div id="online-vote-list" class="online-vote-list"></div>
+      </div>
+    </main>
+
+    <!-- ONLINE RESULT -->
+    <main id="screen-online-result" class="screen hidden">
+      <div class="card" style="text-align:center">
+        <div id="online-result-title" class="result-title">Résultat</div>
+        <p id="online-result-body" class="result-body">...</p>
+        <button id="btn-next-round-online" class="btn btn-online hidden">Manche suivante ➜</button>
+        <p style="font-size:.8rem;color:var(--text2);margin-top:8px" id="online-result-wait">En attente de l'hôte…</p>
+      </div>
+    </main>
+
+    <!-- MR WHITE ONLINE -->
+    <main id="screen-online-mrwhite" class="screen hidden">
+      <div class="card mrwhite-guess-screen">
+        <div class="mrwhite-title">❓ Dernière chance !</div>
+        <p id="online-mrwhite-name" style="color:var(--mrwhite);font-weight:800;font-size:1.05rem;margin-bottom:8px"></p>
+        <div id="online-mrwhite-area"></div>
+      </div>
+    </main>
+
+    <!-- ONLINE GAME OVER -->
+    <main id="screen-online-gameover" class="screen hidden">
+      <div class="card">
+        <div class="gameover-center">
+          <span id="online-go-emoji" class="gameover-emoji">🎉</span>
+          <div id="online-go-title" class="gameover-title">Titre</div>
+          <p id="online-go-sub" class="gameover-sub">Sous-titre</p>
+        </div>
+        <div id="online-go-words"></div>
+        <div class="section-title">🃏 Rôles de cette partie</div>
+        <div id="online-go-roles" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+        <hr class="divider"/>
+        <button id="btn-online-replay" class="btn btn-online" style="margin-bottom:10px">🔄 Rejouer</button>
+        <button id="btn-online-quit" class="btn btn-secondary">🏠 Quitter</button>
+      </div>
+    </main>
+
+  </div><!-- /section-online -->
+
+  <!-- TOAST -->
+  <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+  <footer class="app-footer">Undercover V2 🕵️</footer>
+
+</div><!-- #app -->
+
+<!-- Firebase SDKs (chargés depuis CDN) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<!-- App scripts -->
+<script src="js/words.js"></script>
+<script src="js/online/config.js"></script>
+<script src="js/online/firebase.js"></script>
+<script src="js/online/voice.js"></script>
+<script src="js/offline/game.js"></script>
+<script src="js/offline/ui.js"></script>
+<script src="js/offline/app.js"></script>
+<script src="js/online/app.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
